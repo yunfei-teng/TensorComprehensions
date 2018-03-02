@@ -15,8 +15,12 @@
  */
 #include "tc/core/polyhedral/codegen_llvm.h"
 
+#include <cstdlib>
+#include <iostream>
 #include <sstream>
 #include <vector>
+
+#include <unistd.h>
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
@@ -206,6 +210,46 @@ class IslAstExprInterpeter {
   }
 };
 
+namespace {
+// In a separate process, call the LLC and dump the ASM
+// Since this is for debugging purposes only atm, separate process is fine.
+string emitAsm(const string& llvmIr) {
+  // Create a temporary file (do not use racy tmpname;
+  // do not use tmpnam that immediately destroys the file).
+  char fileCName[256] = "/tmp/XXXXXXXXXX";
+  auto fd = mkstemp(fileCName);
+  ScopeGuard sg([fileCName]() { unlink(fileCName); });
+  CHECK_GE(fd, 0) << "mkstemp(): " << fileCName << " returned fd: " << fd;
+
+  auto tmp = fdopen(fd, "wb+");
+  std::fputs(llvmIr.c_str(), tmp);
+  fclose(tmp);
+
+  std::string fileName(fileCName);
+  // TODO: evolve this in a better way to find LLVM
+  auto command = std::string(" `which llc || which llc-5.0` ") +
+      std::string(" -asm-verbose ") + std::string(" < ") + fileName;
+  FILE* fpipe = popen(command.c_str(), "r");
+  CHECK(fpipe) << "Failed to popen() on command: " << command;
+  ScopeGuard sg2([fpipe]() { pclose(fpipe); });
+
+  char buffer[512];
+  std::stringstream outputss;
+  while (1) {
+    int charactersRead = fread(buffer, 1, sizeof(buffer), fpipe);
+    if (charactersRead == 0) {
+      int err = ferror(fpipe);
+      CHECK(err == 0) << "Error " << err
+                      << " reading results of command: " << command;
+      break;
+    }
+    outputss << std::string(buffer, charactersRead);
+  }
+
+  return outputss.str();
+}
+} // namespace
+
 static constexpr int kOptLevel = 3;
 
 class CodeGen_TC : public Halide::Internal::CodeGen_X86 {
@@ -351,6 +395,9 @@ class CodeGen_TC : public Halide::Internal::CodeGen_X86 {
           << "[LLVM-IR] After optimization:\n"
           << toString(module.get());
     }
+
+    LOG_IF(INFO, FLAGS_llvm_dump_asm) << "[LLVM-ASM] ASM:\n"
+                                      << emitAsm(toString(module.get()));
   }
 };
 

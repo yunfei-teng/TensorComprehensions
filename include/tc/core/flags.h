@@ -33,6 +33,7 @@ DECLARE_bool(dump_cuda);
 // llvm codegen
 DECLARE_bool(llvm_dump_before_opt);
 DECLARE_bool(llvm_dump_after_opt);
+DECLARE_bool(llvm_dump_asm);
 
 // Used in benchmarking and autotuning
 DECLARE_uint32(benchmark_warmup);
