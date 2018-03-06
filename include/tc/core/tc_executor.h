@@ -16,6 +16,7 @@
 #pragma once
 
 #include <limits>
+#include <string>
 
 #include <dlpack/dlpack.h>
 
@@ -33,11 +34,17 @@ using namespace dlutils;
 class TcExecutor {
  public:
   TcExecutor(
-      const std::string& TcDefinition,
-      const std::vector<const DLTensor*>& inputsInfo);
-  TcExecutor(
-      lang::TreeRef TcDefinition,
-      const std::vector<const DLTensor*>& inputsInfo);
+      std::string id,
+      const std::vector<const DLTensor*>& inputsInfo,
+      const std::string& options,
+      lang::TreeRef tcDefinition,
+      size_t handle);
+  // TcExecutor(
+  //     const std::string& tcDefinition,
+  //     const std::vector<const DLTensor*>& inputsInfo);
+  // TcExecutor(
+  //     lang::TreeRef tcDefinition,
+  //     const std::vector<const DLTensor*>& inputsInfo);
   virtual ~TcExecutor();
 
   TcExecutor(TcExecutor&&) = delete;
@@ -90,7 +97,25 @@ class TcExecutor {
         << "TcExecutor::uncheckedRun is abstract and should not be called";
   }
 
+  virtual bool hasRuntimeCompiledFun() {
+    LOG(FATAL)
+        << "TcExecutor::hasRuntimeCompiledFun is abstract and should not be called";
+    return true;
+  }
+
+  virtual void clearRuntimeCompiledFun() {
+    LOG(FATAL)
+        << "TcExecutor::clearRuntimeCompiledFun is abstract and should not be called";
+  }
+
   const static size_t InvalidHandle = std::numeric_limits<size_t>::max();
+
+  std::string identifier;
+  std::vector<dlutils::DLTensorUPtr> inputsInfo;
+  std::string options;
+  /// When run is called this is used to find the most recently compiled
+  /// version.
+  size_t objectLocalHandle;
 
  protected:
   void checkSizesAndStridesAreCompliant(
