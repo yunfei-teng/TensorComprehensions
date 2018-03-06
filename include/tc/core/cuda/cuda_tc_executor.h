@@ -35,15 +35,10 @@ class CudaTcExecutor : public ::tc::TcExecutor {
   CudaTcExecutor(
       std::string id,
       std::vector<const DLTensor*> inputsInfo,
-      const MappingOptions& options,
+      const std::string& options,
       lang::TreeRef tcDefinition,
       size_t handle)
-      : TcExecutor(
-            id,
-            inputsInfo,
-            options.toProtobufSerializedString(),
-            tcDefinition,
-            handle) {}
+      : TcExecutor(id, inputsInfo, options, tcDefinition, handle) {}
 
   ~CudaTcExecutor() {}
 
