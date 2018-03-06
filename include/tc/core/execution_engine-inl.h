@@ -25,8 +25,6 @@
 
 namespace tc {
 
-using namespace dlutils;
-
 // Under object lock, fill parse the language and fill the underlying map
 template <typename ExecutorType>
 void ExecutionEngine<ExecutorType>::define(const std::string& language) {
