@@ -44,14 +44,7 @@ class CudaTcExecutor : public ::tc::TcExecutor {
             options.toProtobufSerializedString(),
             tcDefinition,
             handle) {}
-  // CudaTcExecutor(
-  //     const std::string& def,
-  //     const std::vector<const DLTensor*>& inputsInfo)
-  //     : TcExecutor(def, inputsInfo) {}
-  // CudaTcExecutor(
-  //     lang::TreeRef tree,
-  //     const std::vector<const DLTensor*>& inputsInfo)
-  //     : TcExecutor(tree, inputsInfo) {}
+
   ~CudaTcExecutor() {}
 
   CudaTcExecutor(CudaTcExecutor&&) = delete;

@@ -39,12 +39,7 @@ class TcExecutor {
       const std::string& options,
       lang::TreeRef tcDefinition,
       size_t handle);
-  // TcExecutor(
-  //     const std::string& tcDefinition,
-  //     const std::vector<const DLTensor*>& inputsInfo);
-  // TcExecutor(
-  //     lang::TreeRef tcDefinition,
-  //     const std::vector<const DLTensor*>& inputsInfo);
+
   virtual ~TcExecutor();
 
   TcExecutor(TcExecutor&&) = delete;
