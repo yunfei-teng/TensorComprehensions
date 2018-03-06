@@ -23,6 +23,28 @@ namespace tc {
 
 using namespace dlutils;
 
+size_t CudaExecutionEngine::compile(
+    const std::string& name,
+    const std::vector<const DLTensor*>& inputs,
+    const MappingOptions& options) {
+  // Check if we already have a handle for this name+size+options combination.
+  // If so, return it.
+  size_t handle = getHandle(name, inputs, options);
+  if (handle != TcExecutor::InvalidHandle) {
+    return handle;
+  }
+
+  // Otherwise we need to compile.
+  std::unique_ptr<CudaTcExecutor> p(new CudaTcExecutor(
+      name, inputs, options, tcNameMap_.at(name), TcExecutor::InvalidHandle));
+  CHECK(p);
+  p->compile(options);
+  CHECK(p->hasRuntimeCompiledFun());
+
+  handle = emplaceExecutor(std::move(p));
+  return handle;
+}
+
 // Steal ExecutorInfo and give it back under lock
 // Run outside of lock on owning ExecutorInfo.
 Duration CudaExecutionEngine::run(
@@ -103,28 +125,6 @@ void CudaExecutionEngine::clear(size_t handle) {
   auto executor = static_cast<CudaTcExecutor*>(executors_[handle].get());
   executor->clearRuntimeCompiledFun();
   executors_[handle] = std::unique_ptr<TcExecutor>(nullptr);
-}
-
-size_t CudaExecutionEngine::compile(
-    const std::string& name,
-    const std::vector<const DLTensor*>& inputs,
-    const MappingOptions& options) {
-  // Check if we already have a handle for this name+size+options combination.
-  // If so, return it.
-  size_t handle = getHandle(name, inputs, options);
-  if (handle != TcExecutor::InvalidHandle) {
-    return handle;
-  }
-
-  // Otherwise we need to compile.
-  std::unique_ptr<CudaTcExecutor> p(new CudaTcExecutor(
-      name, inputs, options, tcNameMap_.at(name), TcExecutor::InvalidHandle));
-  CHECK(p);
-  p->compile(options);
-  CHECK(p->hasRuntimeCompiledFun());
-
-  handle = emplaceExecutor(std::move(p));
-  return handle;
 }
 
 } // namespace tc
